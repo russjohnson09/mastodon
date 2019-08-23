@@ -221,6 +221,8 @@ RAILS_ENV=production PORT=3000 /home/mastodon/.rbenv/shims/bundle exec puma -C c
 cp /home/mastodon/mastodon/dist/nginx.conf /etc/nginx/sites-available/mastodon.conf
 ln -s /etc/nginx/sites-available/mastodon.conf /etc/nginx/sites-enabled/mastodon.conf
 
+certbot-auto
+
 service nginx restart
 
 curl http://mastodon.greatlakescode.us -Lv
