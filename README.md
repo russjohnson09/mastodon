@@ -197,14 +197,16 @@ systemctl start mastodon-web mastodon-sidekiq mastodon-streaming
 systemctl enable mastodon-*
 systemctl daemon-reload
 
+systemctl restart mastodon-web
+systemctl restart mastodon-sidekiq
+systemctl restart mastodon-streaming
+
 systemctl status mastodon-web
 systemctl status mastodon-sidekiq
 systemctl status mastodon-streaming
 
 
-systemctl restart mastodon-web
-systemctl status mastodon-sidekiq
-systemctl status mastodon-streaming
+
 
 sudo -u mastodon stat /home/mastodon/.rbenv/shims/bundle
 
@@ -216,7 +218,7 @@ RAILS_ENV=production PORT=3000 /home/mastodon/.rbenv/shims/bundle exec puma -C c
 
 
 #Setup Nginx
-cp /www/mastodon/dist/nginx.conf /etc/nginx/sites-available/mastodon.conf
+cp /home/mastodon/mastodon/dist/nginx.conf /etc/nginx/sites-available/mastodon.conf
 ln -s /etc/nginx/sites-available/mastodon.conf /etc/nginx/sites-enabled/mastodon.conf
 
 service nginx restart
