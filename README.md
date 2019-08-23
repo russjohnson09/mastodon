@@ -1,3 +1,77 @@
+#PHP Storm Connect via ssh
+ssh-agent -s
+ssh-add
+ssh-add ~/.ssh/id_rsa
+
+https://www.yougetsignal.com/tools/open-ports/
+
+ufw status verbose
+firewall-cmd --state
+iptables --line-numbers -vL
+iptables -S
+root@ubuntu-s-1vcpu-1gb-nyc3-01:~# netstat -plunt
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 0.0.0.0:3306            0.0.0.0:*               LISTEN      3339/mysqld         
+tcp        0      0 127.0.0.1:6379          0.0.0.0:*               LISTEN      24035/redis-server  
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      22827/nginx: master 
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      646/systemd-resolve 
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      889/sshd            
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      23888/postgres      
+tcp        0      0 0.0.0.0:25              0.0.0.0:*               LISTEN      7492/master         
+tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN      22827/nginx: master 
+tcp        0      0 127.0.0.1:33373         0.0.0.0:*               LISTEN      868/containerd      
+tcp6       0      0 ::1:6379                :::*                    LISTEN      24035/redis-server  
+tcp6       0      0 :::80                   :::*                    LISTEN      22827/nginx: master 
+tcp6       0      0 :::22                   :::*                    LISTEN      889/sshd            
+tcp6       0      0 :::25                   :::*                    LISTEN      7492/master         
+udp        0      0 127.0.0.53:53           0.0.0.0:*                           646/systemd-resolve 
+
+postgres  127.0.0.1:5432  is not considered open
+
+nmap -sS -Pn -p- -T4 -vv --reason greatlakescode.us
+
+#Allow Postgres Remote
+##Create User
+su - postgres
+
+createuser --interactive --pwprompt
+GRANT CONNECT ON DATABASE mastodon_production TO greatlakescode;
+GRANT USAGE ON SCHEMA public TO greatlakescode;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO greatlakescode;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO greatlakescode;
+
+ALTER USER greatlakescode WITH ENCRYPTED PASSWORD 'password';
+
+psql mastodon_production --host=127.0.0.1 --username=greatlakescode
+
+
+Probably not the best idea. Add password instead.
+
+https://blog.bigbinary.com/2016/01/23/configure-postgresql-to-allow-remote-connection.html
+
+nano /etc/postgresql/10/main/postgresql.conf 
+listen_addresses = '*'
+
+service postgresql restart
+
+netstat -plunt
+
+#Add Swap Space
+https://linuxize.com/post/how-to-add-swap-space-on-ubuntu-18-04/
+
+sudo fallocate -l 1G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+##Edit fstab
+sudo nano /etc/fstab
+/swapfile swap swap defaults 0 0
+
+
+sudo swapon --show
+
 #Node
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
 
@@ -42,7 +116,7 @@ mastodon@ubuntu-s-1vcpu-1gb-nyc3-01:~$ pwd
 /home/mastodon
 
 
-#ruby
+#Clone Repo and Setup Ruby
 su - mastodon
 cd ~
 pwd
@@ -60,6 +134,8 @@ RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install 2.6.1
 rbenv global 2.6.1
 
 gem update --system
+
+##Install Bundler Used by Repo
 gem install bundler --no-document
 exit
 
@@ -71,6 +147,10 @@ CREATE USER mastodon CREATEDB;
 
 
 #Setup
+Setup is done using budle. https://bundler.io/
+
+And yarn installs the lock file for other 
+
 chown mastodon:www-data /www/mastodon -R
 
 su - mastodon
@@ -78,17 +158,41 @@ su - mastodon
 cd /www/mastodon
 
 
+##Install Ruby Packages
 bundle install \
   -j$(getconf _NPROCESSORS_ONLN) \
   --deployment --without development test
+  
+##Install npm packages
 yarn install --pure-lockfile
 
+##Database migrations using ruby rake
 RAILS_ENV=production bundle exec rake mastodon:setup
+
+Username: admin
+E-mail: russjohnson09@gmail.com
+You can login with the password: 3044ab1c0c69a5d4f2c119549b8f5fee
+
 
 exit
 
+#Recompile If Necessary
+RAILS_ENV=production bundle exec rails assets:precompile
+
+
+#Test Web Service
+su - mastodon
+cd /home/mastodon/mastodon
+Services in 
+/mastodon/dist
+
+should have their home directory set properly.
+
+RAILS_ENV=production /home/mastodon/.rbenv/shims/bundle exec puma -C config/puma.rb
+curl localhost:3000
+
 #Setup Services
-cp /www/mastodon/dist/mastodon-*.service /etc/systemd/system/
+cp /home/mastodon/mastodon/dist/mastodon-*.service /etc/systemd/system/
 systemctl start mastodon-web mastodon-sidekiq mastodon-streaming
 systemctl enable mastodon-*
 systemctl daemon-reload
