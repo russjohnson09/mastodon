@@ -43,6 +43,11 @@ mastodon@ubuntu-s-1vcpu-1gb-nyc3-01:~$ pwd
 
 
 #ruby
+su - mastodon
+cd ~
+pwd
+/home/mastodon
+git clone git@github.com:russjohnson09/mastodon.git live
 
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 cd ~/.rbenv && src/configure && make -C src
@@ -82,12 +87,37 @@ RAILS_ENV=production bundle exec rake mastodon:setup
 
 exit
 
+#Setup Services
+cp /www/mastodon/dist/mastodon-*.service /etc/systemd/system/
+systemctl start mastodon-web mastodon-sidekiq mastodon-streaming
+systemctl enable mastodon-*
+systemctl daemon-reload
+
+systemctl status mastodon-web
+systemctl status mastodon-sidekiq
+systemctl status mastodon-streaming
+
+
+systemctl restart mastodon-web
+systemctl status mastodon-sidekiq
+systemctl status mastodon-streaming
+
+sudo -u mastodon stat /home/mastodon/.rbenv/shims/bundle
+
+/home/mastodon/.rbenv/shims/bundle is not a directory
+
+service --status-all
+
+RAILS_ENV=production PORT=3000 /home/mastodon/.rbenv/shims/bundle exec puma -C config/puma.rb
+
+
 #Setup Nginx
 cp /www/mastodon/dist/nginx.conf /etc/nginx/sites-available/mastodon.conf
 ln -s /etc/nginx/sites-available/mastodon.conf /etc/nginx/sites-enabled/mastodon.conf
 
 service nginx restart
 
+curl http://mastodon.greatlakescode.us -Lv
 
 
 ![Mastodon](https://i.imgur.com/NhZc40l.png)
