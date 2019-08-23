@@ -1,3 +1,6 @@
+https://docs.joinmastodon.org/administration/installation/#setting-up-nginx
+
+
 #PHP Storm Connect via ssh
 ssh-agent -s
 ssh-add
