@@ -83,7 +83,10 @@ RAILS_ENV=production bundle exec rake mastodon:setup
 exit
 
 #Setup Nginx
+cp /www/mastodon/dist/nginx.conf /etc/nginx/sites-available/mastodon.conf
+ln -s /etc/nginx/sites-available/mastodon.conf /etc/nginx/sites-enabled/mastodon.conf
 
+service nginx restart
 
 
 
